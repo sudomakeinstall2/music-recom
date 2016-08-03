@@ -25,20 +25,14 @@ def add_or_create_artist( name, url, mbid ):
         db.session.commit()
     return artist
 
-@app.route('/show', methods=['GET', 'POST'])
-def show():
-    ### get track info
-    html = urllib2.urlopen(LAST_TRACK_INFO%(request.form["artist"],request.form["track"])).read()
-    soup = BeautifulSoup(html, "lxml")
-    soup = soup.lfm.track
 
+def add_or_create_track(soup):
     url = soup.find('url', recursive=False).text
-
     tr = models.Track.query.filter_by(url=url).first()
     if tr:
-        tr.like = 1
+        return tr
     else:
-        #app.logger.warning("adding new track")
+        # app.logger.warning("adding new track")
         tr = models.Track()
         tr.url = url
         tr.name = soup.find('name', recursive=False).text
@@ -47,7 +41,7 @@ def show():
             tr.mbid = soup.find('mbid', recursive=False).text
         except:
             tr.mbid = ""
-            app.logger.warning( tr.name + " doesn't have mbid" )
+            app.logger.warning(tr.name + " doesn't have mbid")
 
         try:
             tr.duration = soup.find('duration', recursive=False).text
@@ -56,7 +50,12 @@ def show():
             app.logger.warning(tr.name + " doesn't have duration")
 
         tr.playcount = soup.find('playcount', recursive=False).text
-        tr.image = soup.find(size="large").text
+
+        try:
+            tr.image = soup.find(size="large").text
+        except:
+            tr.image = ""
+            app.logger.warning(tr.name + " doesn't have image")
 
         artist_name = soup.artist.find('name', recursive=False).text
         artist_mbid = soup.artist.find('mbid', recursive=False).text
@@ -64,59 +63,46 @@ def show():
 
         artist = add_or_create_artist(artist_name, artist_url, artist_mbid)
         tr.artist = artist
-        tr.like = 1
         db.session.add(tr)
+        db.session.commit()
+        return tr
+
+@app.route('/show', methods=['GET', 'POST'])
+def show():
+    ### get track info
+    request_url = LAST_TRACK_INFO%(request.form["artist"],request.form["track"])
+    request_url = request_url.replace(" ","%20")
+    app.logger.warning(request_url)
+    html = urllib2.urlopen(request_url).read()
+    soup = BeautifulSoup(html, "lxml")
+    soup = soup.lfm.track
+
+    url = soup.find('url', recursive=False).text
+
+    tr = add_or_create_track(soup)
+    tr.like = 1
+    db.session.add(tr)
     db.session.commit()
 
-
-
     ### get similars
-    html = urllib2.urlopen(LAST_SIM_API%(request.form["artist"],request.form["track"])).read()
+    request_url = LAST_SIM_API%(request.form["artist"],request.form["track"])
+    request_url = request_url.replace(" ","%20")
+    html = urllib2.urlopen(request_url).read()
     #app.logger.warning(html)
     soup = BeautifulSoup(html, "lxml")
     tracks = []
     for x in soup.find_all('track'):
-        track_name = x.find('name').text
-        playcount = x.playcount.text
+        t = add_or_create_track(x)
 
-        try:
-            mbid = x.find('mbid', recursive=False).text
-        except AttributeError:
-            mbid = ""
-            app.logger.warning( track_name + " doesn't have mbid" )
-
-        match = x.match.text
-
-        try:
-            url = x.find('url', recursive=False).text
-        except AttributeError:
-            url = ""
-            app.logger.warning( track_name + " doesnt have url" )
-
-        try:
-            duration = x.duration.text
-        except AttributeError:
-            app.logger.warning(track_name+" does not have duration")
-            duration = 0
-
-        image = x.find(size="large").text
-        artist_name = x.artist.find('name').text
-        artist_mbid = x.artist.mbid.text
-        artist_url = x.artist.url.text
-
-        t = models.Track()
-        t.name = track_name
-        t.playcount = playcount
-        t.mbid = mbid
-        t.url = url
-        t.duration = duration
-        t.image = image
-
-        artist = add_or_create_artist(artist_name,artist_url,artist_mbid)
-
-        t.artist = artist
+        edge = models.TrackLink()
+        edge.from_id = tr.track_id
+        edge.to_id = t.track_id
+        edge.match = x.match.text
+        tr.sims.append(edge)
+        t.back_sims.append(edge)
 
         db.session.add(t)
+        db.session.add(tr)
         db.session.commit()
 
         tracks.append(t)
@@ -125,4 +111,5 @@ def show():
 
     return render_template("track.html", name=tr.name,
                            artist=tr.artist.name,
-                           tracks = tracks)
+                           tracks = tracks,
+                           match = "")
