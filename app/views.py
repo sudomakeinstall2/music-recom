@@ -93,10 +93,19 @@ def status():
     return render_template('status.html',tracks=tracks)
 
 
-@app.route('/likeSong', methods=['GET', 'POST'])
-def likeSong():
+@app.route('/updateSong', methods=['GET', 'POST'])
+def updateSong():
+    if request.form['action'] == 'like':
+        return likeSong(request.form["artist"], request.form["track"])
+    elif request.form['action'] == 'ignore':
+        track = models.Track.query.get(int(request.form["track_id"]))
+        track.like = -1
+        db.session.commit()
+        return redirect('/status')
+
+def likeSong(_artist, _track):
     ### get track info
-    request_url = LAST_TRACK_INFO%(request.form["artist"],request.form["track"])
+    request_url = LAST_TRACK_INFO%(_artist,_track)
     request_url = request_url.replace(" ","%20")
     app.logger.warning(request_url)
     html = urllib2.urlopen(request_url).read()
@@ -107,11 +116,10 @@ def likeSong():
 
     tr = add_or_create_track(soup)
     tr.like = 1
-    db.session.add(tr)
     db.session.commit()
 
     ### get similars
-    request_url = LAST_SIM_API%(request.form["artist"],request.form["track"])
+    request_url = LAST_SIM_API%(_artist,_track)
     request_url = request_url.replace(" ","%20")
     html = urllib2.urlopen(request_url).read()
     #app.logger.warning(html)
@@ -119,6 +127,8 @@ def likeSong():
     tracks = []
     for x in soup.find_all('track'):
         t = add_or_create_track(x)
+        if models.TrackLink.query.filter_by(from_id=tr.track_id,to_id=t.track_id).first():
+            continue
 
         edge = models.TrackLink()
         edge.from_id = tr.track_id
@@ -127,10 +137,7 @@ def likeSong():
         tr.sims.append(edge)
         t.back_sims.append(edge)
 
-        db.session.add(t)
-        db.session.add(tr)
         db.session.commit()
-
         tracks.append(t)
         #app.logger.warning(repr( (track_name, playcount, mbid, match, url, duration, image, artist_name, artist_mbid, artist_url) ))
 
