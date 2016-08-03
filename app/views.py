@@ -1,11 +1,13 @@
-from app import app, models, db
-from flask import render_template, request, redirect
+from app import app, models, db, lm, forms
+from flask import render_template, request, redirect, g, flash, session, url_for
+from flask_login import current_user, login_user, login_required, logout_user
 import urllib2
 
 from bs4 import BeautifulSoup
 
 
 @app.route('/')
+@login_required
 def index():
     return render_template("addmusic.html")
 
@@ -69,7 +71,49 @@ def add_or_create_track(soup):
         return tr
 
 
+@app.before_request
+def before_request():
+    g.user = current_user
+
+@lm.user_loader
+def load_user(id):
+    return models.User.query.get(int(id))
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect('/')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if g.user is not None and g.user.is_authenticated:
+        # already logged in
+        return redirect('/')
+    form = forms.LoginForm()
+    if form.validate_on_submit():
+        session['remember_me'] = form.remember_me.data
+        session['remember_me'] = False
+        # successful login
+        user = models.User.query.filter_by(email=form.email.data).first()
+        if user is None:
+            email = form.email.data
+            user = models.User(nickname=email.split('@')[0],email = email)
+            db.session.add(user)
+            db.session.commit()
+        remember = False
+        if 'remember_me' in session:
+            remember = session['remember_me']
+            session.pop('remember_me',None)
+        login_user(user, remember = remember)
+        return redirect('/')
+    return render_template('login.html',
+                           form=form)
+
+
 @app.route('/status')
+@login_required
 def status():
     tracks = []
     dic = {}
@@ -86,7 +130,7 @@ def status():
     tracks.sort(key=lambda x:x[1][1], reverse=True)
     for i,x in enumerate(tracks):
         t = x[1][0]
-        sims = [models.Track.query.get(link.from_id).name for link in t.back_sims]
+        sims = [models.Track.query.get(link.from_id).name for link in sorted(t.back_sims,key=lambda x: x.match, reverse = True)]
         tracks[i][1].append(sims)
     #for track in tracks:
     #    app.logger.warning(repr(track[1]))
@@ -94,6 +138,7 @@ def status():
 
 
 @app.route('/updateSong', methods=['GET', 'POST'])
+@login_required
 def updateSong():
     if request.form['action'] == 'like':
         return likeSong(request.form["artist"], request.form["track"])
