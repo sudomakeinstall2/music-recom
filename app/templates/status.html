@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Status</title>
+</head>
+<body>
+
+{% for track in tracks[:10] %}
+<form action="/likeSong" method="post">
+    {{ track[1][0].name }}
+    <input type="hidden" value="{{ track[1][0].name }}" name="track">
+    <br>
+    {{ track[1][0].artist.name }}
+    <input type="hidden" value="{{ track[1][0].artist.name }}" name="artist">
+    <br>
+    {{ track[1][1] }}
+    <br>
+    similar to:
+    {% for name in track[1][2] %}
+    {{ name }} ,
+    {% endfor %}
+    <br>
+    <input type="submit" value="like">
+</form>
+{% endfor %}
+
+</body>
+</html>

@@ -1,8 +1,9 @@
 from app import app, models, db
-from flask import render_template, request
+from flask import render_template, request, redirect
 import urllib2
 
 from bs4 import BeautifulSoup
+
 
 @app.route('/')
 def index():
@@ -67,8 +68,33 @@ def add_or_create_track(soup):
         db.session.commit()
         return tr
 
-@app.route('/show', methods=['GET', 'POST'])
-def show():
+
+@app.route('/status')
+def status():
+    tracks = []
+    dic = {}
+    links = models.TrackLink.query.all()
+    for link in links:
+        if link.to_id in dic:
+            dic[link.to_id][1] = dic[link.to_id][1] + link.match
+        else:
+            t = models.Track.query.get(link.to_id)
+            if t.like == 1 or t.like == -1:
+                continue
+            dic[link.to_id] = [t, link.match]
+    tracks = list(dic.items())
+    tracks.sort(key=lambda x:x[1][1], reverse=True)
+    for i,x in enumerate(tracks):
+        t = x[1][0]
+        sims = [models.Track.query.get(link.from_id).name for link in t.back_sims]
+        tracks[i][1].append(sims)
+    #for track in tracks:
+    #    app.logger.warning(repr(track[1]))
+    return render_template('status.html',tracks=tracks)
+
+
+@app.route('/likeSong', methods=['GET', 'POST'])
+def likeSong():
     ### get track info
     request_url = LAST_TRACK_INFO%(request.form["artist"],request.form["track"])
     request_url = request_url.replace(" ","%20")
@@ -108,8 +134,4 @@ def show():
         tracks.append(t)
         #app.logger.warning(repr( (track_name, playcount, mbid, match, url, duration, image, artist_name, artist_mbid, artist_url) ))
 
-
-    return render_template("track.html", name=tr.name,
-                           artist=tr.artist.name,
-                           tracks = tracks,
-                           match = "")
+    return redirect('/status')

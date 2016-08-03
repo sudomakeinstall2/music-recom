@@ -6,6 +6,7 @@ from app import db
 #                         db.Column('match',db.Float)
 #                         )
 
+
 class TrackLink(db.Model):
     __tablename__ = 'tracklinks'
     id = db.Column(db.Integer, primary_key = True)
