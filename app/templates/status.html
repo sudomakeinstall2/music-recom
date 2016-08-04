@@ -11,7 +11,7 @@
 <body>
 
 
-{% for track in tracks[:10] %}
+{% for track in tracks[:100] %}
 <form action="/updateSong" method="post">
     {{ track[1][0].name }}
     <input type="hidden" value="{{ track[1][0].name }}" name="track">

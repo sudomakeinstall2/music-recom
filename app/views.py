@@ -61,7 +61,13 @@ def add_or_create_track(soup):
             app.logger.warning(tr.name + " doesn't have image")
 
         artist_name = soup.artist.find('name', recursive=False).text
-        artist_mbid = soup.artist.find('mbid', recursive=False).text
+
+        try:
+            artist_mbid = soup.artist.find('mbid', recursive=False).text
+        except:
+            artist_mbid = ""
+            app.logger.warning("artitst" + artist_name + " doesn't have mbid")
+
         artist_url = soup.artist.find('url', recursive=False).text
 
         artist = add_or_create_artist(artist_name, artist_url, artist_mbid)
@@ -202,6 +208,9 @@ def likeSong(_artist, _track):
     soup = BeautifulSoup(html, "lxml")
     #tracks = []
     for x in soup.find_all('track'):
+        match = float( x.match.text )
+        if match < 0.01:
+            continue
         t = add_or_create_track(x)
         if models.TrackLink.query.filter_by(from_id=tr.track_id,to_id=t.track_id).first():
             continue
