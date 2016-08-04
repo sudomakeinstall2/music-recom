@@ -115,16 +115,22 @@ def login():
 @app.route('/status')
 @login_required
 def status():
-    tracks = []
     dic = {}
+    user_likes = models.UserLike.query.filter_by(user_id = g.user.id)
+    liked_tracks = set()
+    disliked_tracks = set()
+    for x in user_likes:
+        if x.like == 1:
+            liked_tracks.add(x.track_id)
+        elif x.like == -1:
+            disliked_tracks.add(x.track_id)
+    #set_tracks = set([x.track_id for x in user_likes if x.like == 1])
     links = models.TrackLink.query.all()
     for link in links:
         if link.to_id in dic:
             dic[link.to_id][1] = dic[link.to_id][1] + link.match
-        else:
+        elif link.from_id in liked_tracks and link.to_id not in liked_tracks and link.to_id not in disliked_tracks:
             t = models.Track.query.get(link.to_id)
-            if t.like == 1 or t.like == -1:
-                continue
             dic[link.to_id] = [t, link.match]
     tracks = list(dic.items())
     tracks.sort(key=lambda x:x[1][1], reverse=True)
@@ -137,16 +143,38 @@ def status():
     return render_template('status.html',tracks=tracks)
 
 
+def user_like_song(track_id, like):
+    user_like = models.UserLike.query.filter_by(track_id=track_id, user_id=g.user.id).first()
+    if user_like:
+        app.logger.warning('user %d track %d already relation' % (g.user.id, track_id))
+        if user_like.like == like:
+            return
+        else:
+            user_like.like = like
+            #db.session().commit()
+            return
+    app.logger.warning('user %d track %d creating relation'%(g.user.id,track_id))
+    track = models.Track.query.get(track_id)
+    edge = models.UserLike()
+    edge.track_id = track_id
+    edge.user_id = g.user.id
+    edge.like = like
+    track.users.append(edge)
+    g.user.tracks.append(edge)
+    #db.session.commit()
+    app.logger.warning('user %d track %d finished' % (g.user.id, track_id))
+
+
 @app.route('/updateSong', methods=['GET', 'POST'])
 @login_required
 def updateSong():
     if request.form['action'] == 'like':
         return likeSong(request.form["artist"], request.form["track"])
     elif request.form['action'] == 'ignore':
-        track = models.Track.query.get(int(request.form["track_id"]))
-        track.like = -1
+        user_like_song(int(request.form["track_id"]), -1)
         db.session.commit()
         return redirect('/status')
+
 
 def likeSong(_artist, _track):
     ### get track info
@@ -154,22 +182,25 @@ def likeSong(_artist, _track):
     request_url = request_url.replace(" ","%20")
     app.logger.warning(request_url)
     html = urllib2.urlopen(request_url).read()
+    app.logger.warning("downloaded url")
     soup = BeautifulSoup(html, "lxml")
     soup = soup.lfm.track
 
     url = soup.find('url', recursive=False).text
 
     tr = add_or_create_track(soup)
-    tr.like = 1
-    db.session.commit()
+    user_like_song(tr.track_id, 1)
+    #db.session.commit()
 
     ### get similars
     request_url = LAST_SIM_API%(_artist,_track)
     request_url = request_url.replace(" ","%20")
+    app.logger.warning(request_url)
     html = urllib2.urlopen(request_url).read()
+    app.logger.warning("downloaded url")
     #app.logger.warning(html)
     soup = BeautifulSoup(html, "lxml")
-    tracks = []
+    #tracks = []
     for x in soup.find_all('track'):
         t = add_or_create_track(x)
         if models.TrackLink.query.filter_by(from_id=tr.track_id,to_id=t.track_id).first():
@@ -182,8 +213,8 @@ def likeSong(_artist, _track):
         tr.sims.append(edge)
         t.back_sims.append(edge)
 
-        db.session.commit()
-        tracks.append(t)
+        #db.session.commit()
+        #tracks.append(t)
         #app.logger.warning(repr( (track_name, playcount, mbid, match, url, duration, image, artist_name, artist_mbid, artist_url) ))
-
+    db.session.commit()
     return redirect('/status')
