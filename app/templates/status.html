@@ -1,36 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Status</title>
-
+{% extends "index.html" %}
+{% block content %}
         {% if g.user.is_authenticated %}
         | <a href="{{ url_for('logout') }}">Logout</a>
         {% endif %}
-</head>
-<body>
 
+<div class="card-deck-wrapper">
+  <div class="card-deck">
+    {% for track in tracks[:4] %}
+    <div class="card" id="c{{track[1][0].track_id}}">
+        <div class="card-block">
+          <h4 class="card-title">{{track[1][0].name}}</h4>
+          <h5 class="card-subtitle text-muted">{{track[1][0].artist.name}}</h5>
+        </div>
+      <!-- <img class="card-img-top" src="..." alt="Card image cap"> -->
+      <div class="card-block" style="padding-bottom:4.7rem">
 
-{% for track in tracks[:100] %}
-<form action="/updateSong" method="post">
-    {{ track[1][0].name }}
-    <input type="hidden" value="{{ track[1][0].name }}" name="track">
-    <br>
-    {{ track[1][0].artist.name }}
-    <input type="hidden" value="{{ track[1][0].artist.name }}" name="artist">
-    <input type="hidden" value="{{ track[1][0].track_id }}" name="track_id">
-    <br>
-    {{ track[1][1] }}
-    <br>
-    similar to:
-    {% for name in track[1][2] %}
-    {{ name }} ,
+        <p class="card-text">Similar to:
+            {{ track[1][2][:5]|join(', ')}}
+        </p>
+        <p class="card-text"><small class="text-muted">{{track[1][1]}}</small></p>
+        
+      </div>
+      <div class="card-footer">
+            <a href="#" class="btn btn-primary" action="like" track="{{track[1][0].name}}" artist="{{track[1][0].artist.name}}">Like</a>
+            <a href="#" class="btn btn-primary" action="ignore" trackid="{{track[1][0].track_id}}">Ignore</a>
+        </div>
+    </div>
     {% endfor %}
-    <br>
-    <input type="submit" name="action" value="like">
-    <input type="submit" name="action" value="ignore">
-</form>
-{% endfor %}
+  </div>
+</div>
 
-</body>
-</html>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/notify.min.js') }}"></script>
+<script>
+    $( ".btn" ).click(function( eventObject ) {
+        var elem = $( this );
+        $.notify("Working...", "info",{autohide: false});
+        if ( elem.attr( "action" )=="like" ) {
+            $.post( "/updateSong", { action: "like", artist: elem.attr("artist"), track: elem.attr("track") })
+             .done(function(data){
+                 window.location.reload();
+                  //$("#c"+elem.attr("trackid")).remove();
+                  }) 
+        } 
+        if ( elem.attr( "action" )=="ignore" ) {
+            $.post( "/updateSong", { action: "ignore", track_id: elem.attr("trackid") })
+             .done(function(data){
+                 window.location.reload();
+                  //$("#c"+elem.attr("trackid")).remove();
+                  }) 
+        } 
+    });
+</script>
+{% endblock %}
+

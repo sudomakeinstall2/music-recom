@@ -1,9 +1,12 @@
 from app import app, models, db, lm, forms
 from flask import render_template, request, redirect, g, flash, session, url_for
 from flask_login import current_user, login_user, login_required, logout_user
-import urllib2
+import urllib2, json
 
 from bs4 import BeautifulSoup
+
+
+from wtforms import Form, BooleanField,validators
 
 
 @app.route('/')
@@ -94,17 +97,23 @@ def logout():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    #return render_template('index.html')
     if g.user is not None and g.user.is_authenticated:
         # already logged in
         return redirect('/')
-    form = forms.LoginForm()
-    if form.validate_on_submit():
-        session['remember_me'] = form.remember_me.data
-        session['remember_me'] = False
+    if request.form:
+        email = request.form['email']
+        if 'remember' not in request.form:
+            remember = False
+        else:
+            remember = True
+        #app.logger.debug("email %s remember me %s", email, remember)
+        session['remember_me'] = remember
+        #session['remember_me'] = False
         # successful login
-        user = models.User.query.filter_by(email=form.email.data).first()
+        user = models.User.query.filter_by(email=email).first()
         if user is None:
-            email = form.email.data
+            #email = form.email.data
             user = models.User(nickname=email.split('@')[0],email = email)
             db.session.add(user)
             db.session.commit()
@@ -114,8 +123,61 @@ def login():
             session.pop('remember_me',None)
         login_user(user, remember = remember)
         return redirect('/')
-    return render_template('login.html',
-                           form=form)
+    return render_template('login.html')
+
+
+class SimpleTrack():
+    def __init__(self, track_id, track_name, artist_name, user_id, match=None):
+        self.trackID = track_id
+        self.trackName = track_name
+        self.artistName = artist_name
+        self.match = match
+        self.like = None
+        if user_id:
+            user_like = models.UserLike.query.filter_by(track_id=track_id, user_id=user_id).first()
+            if user_like:
+                self.like = user_like.like
+
+
+@app.route('/track/<int:track_id>')
+def trackPage(track_id):
+
+    track = models.Track.query.filter_by(track_id=track_id).first()
+    image = track.image
+    user_id = None
+    if current_user.is_authenticated:
+        user_id = current_user.id
+    simple_track = SimpleTrack(track.track_id,
+                               track.name,
+                               track.artist.name,
+                               user_id)
+    sims = []
+    for trackLink in track.sims:
+        t = models.Track.query.get(trackLink.to_id)
+        simple_tr = SimpleTrack(t.track_id,
+                                   t.name,
+                                   t.artist.name,
+                                   user_id,
+                                   trackLink.match)
+        sims.append(simple_tr)
+
+    back_sims = []
+    for trackLink in track.back_sims:
+        t = models.Track.query.get(trackLink.from_id)
+        simple_tr = SimpleTrack(t.track_id,
+                                   t.name,
+                                   t.artist.name,
+                                   user_id,
+                                   trackLink.match)
+        back_sims.append(simple_tr)
+
+    back_sims.sort(key=lambda x:-x.match)
+
+    return render_template('track.html',
+                           track=simple_track,
+                           image=image,
+                           sims=sims,
+                           back_sims=back_sims)
 
 
 @app.route('/status')
@@ -140,15 +202,17 @@ def status():
             dic[link.to_id] = [t, link.match]
     tracks = list(dic.items())
     tracks.sort(key=lambda x:x[1][1], reverse=True)
+    tracks = tracks[:4]
     for i,x in enumerate(tracks):
         t = x[1][0]
         sims = [models.Track.query.get(link.from_id).name for link in sorted(t.back_sims,key=lambda x: x.match, reverse = True)]
         tracks[i][1].append(sims)
+    print tracks[0]
     #for track in tracks:
     #    app.logger.warning(repr(track[1]))
     return render_template('status.html',tracks=tracks)
 
-
+@login_required
 def user_like_song(track_id, like):
     user_like = models.UserLike.query.filter_by(track_id=track_id, user_id=g.user.id).first()
     if user_like:
@@ -226,4 +290,5 @@ def likeSong(_artist, _track):
         #tracks.append(t)
         #app.logger.warning(repr( (track_name, playcount, mbid, match, url, duration, image, artist_name, artist_mbid, artist_url) ))
     db.session.commit()
-    return redirect('/status')
+    return json.dumps({'success':True}), 200, {'ContentType':'application/json'}
+    #return redirect('/status')

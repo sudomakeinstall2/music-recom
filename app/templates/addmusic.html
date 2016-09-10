@@ -1,6 +1,10 @@
+{% extends "index.html" %}
+{% block content %}
+
 {% if g.user.is_authenticated %}
 welcome {{g.user.nickname}}
 {% endif %}
+
 
 <form action="/updateSong" method="post">
     Track:
@@ -11,3 +15,5 @@ welcome {{g.user.nickname}}
     <br>
     <input type="submit" name="action" value="like">
 </form>
+
+{% endblock %}
