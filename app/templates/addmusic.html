@@ -6,6 +6,12 @@ welcome {{g.user.nickname}}
 {% endif %}
 
 
+
+<input value="0" type="number" class="rating" min=0 max=3 step=1 data-stars="3">
+<br>
+
+
+
 <form action="/updateSong" method="post">
     Track:
     <input type="text" name="track">

@@ -10,3 +10,8 @@ img.centered {
    margin: auto auto;
 }
 
+.hide {
+    display: none !important;
+
+}
+
