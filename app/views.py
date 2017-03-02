@@ -1,3 +1,5 @@
+# coding=UTF-8
+
 from app import app, models, db, lm, forms
 from flask import render_template, request, redirect, g, flash, session, url_for
 from flask_login import current_user, login_user, login_required, logout_user
@@ -251,7 +253,7 @@ def likeSong(_artist, _track):
     request_url = LAST_TRACK_INFO%(_artist,_track)
     request_url = request_url.replace(" ","%20")
     app.logger.warning(request_url)
-    html = urllib2.urlopen(request_url).read()
+    html = urllib2.urlopen(request_url.encode('utf-8')).read()
     app.logger.warning("downloaded url")
     soup = BeautifulSoup(html, "lxml")
     soup = soup.lfm.track
@@ -266,7 +268,7 @@ def likeSong(_artist, _track):
     request_url = LAST_SIM_API%(_artist,_track)
     request_url = request_url.replace(" ","%20")
     app.logger.warning(request_url)
-    html = urllib2.urlopen(request_url).read()
+    html = urllib2.urlopen(request_url.encode('utf-8')).read()
     app.logger.warning("downloaded url")
     #app.logger.warning(html)
     soup = BeautifulSoup(html, "lxml")
