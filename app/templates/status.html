@@ -9,20 +9,20 @@
     {% for track in tracks[:4] %}
     <div class="card" id="c{{track[1][0].track_id}}">
         <div class="card-block">
-          <h4 class="card-title">{{track[1][0].name}}</h4>
-          <h5 class="card-subtitle text-muted">{{track[1][0].artist.name}}</h5>
+          <h4 class="card-title">{{track[1][0].name|safe}}</h4>
+          <h5 class="card-subtitle text-muted">{{track[1][0].artist.name|safe}}</h5>
         </div>
       <!-- <img class="card-img-top" src="..." alt="Card image cap"> -->
       <div class="card-block" style="padding-bottom:4.7rem">
 
         <p class="card-text">Similar to:
-            {{ track[1][2][:5]|join(', ')}}
+            {{ track[1][2][:5]|join(', ')|safe}}
         </p>
         <p class="card-text"><small class="text-muted">{{track[1][1]}}</small></p>
         
       </div>
       <div class="card-footer">
-            <a href="#" class="btn btn-primary" action="like" track="{{track[1][0].name}}" artist="{{track[1][0].artist.name}}">Like</a>
+            <a href="#" class="btn btn-primary" action="like" track="{{track[1][0].name|safe}}" artist="{{track[1][0].artist.name|safe}}">Like</a>
             <a href="#" class="btn btn-primary" action="ignore" trackid="{{track[1][0].track_id}}">Ignore</a>
         </div>
     </div>
