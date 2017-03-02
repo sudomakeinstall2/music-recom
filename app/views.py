@@ -129,17 +129,31 @@ def login():
 
 
 class SimpleTrack():
-    def __init__(self, track_id, track_name, artist_name, user_id, match=None):
+    def __init__(self, track_id, track_name, artist_name, user_id, artist_id, match=None):
         self.trackID = track_id
         self.trackName = track_name
         self.artistName = artist_name
         self.match = match
         self.like = None
+        self.artist_id = artist_id
         if user_id:
             user_like = models.UserLike.query.filter_by(track_id=track_id, user_id=user_id).first()
             if user_like:
                 self.like = user_like.like
 
+@app.route('/artist/<int:artist_id>')
+def artistPage(artist_id):
+
+	user_id = None
+	if current_user.is_authenticated:
+		user_id = current_user.id
+
+	artist = models.Artist.query.filter_by(artist_id=artist_id).first()
+	tracks = [SimpleTrack(t.track_id, t.name, artist.name, user_id, artist_id) for t in artist.tracks]
+
+	return render_template('artist.html',
+		artist=artist,
+		tracks=tracks)
 
 @app.route('/track/<int:track_id>')
 def trackPage(track_id):
@@ -157,7 +171,8 @@ def trackPage(track_id):
     simple_track = SimpleTrack(track.track_id,
                                track.name,
                                track.artist.name,
-                               user_id)
+                               user_id,
+                               track.artist.artist_id)
     sims = []
     for trackLink in track.sims:
         t = models.Track.query.get(trackLink.to_id)
@@ -165,6 +180,7 @@ def trackPage(track_id):
                                    t.name,
                                    t.artist.name,
                                    user_id,
+                                   t.artist.artist_id,
                                    trackLink.match)
         sims.append(simple_tr)
 
@@ -178,6 +194,7 @@ def trackPage(track_id):
                                    t.name,
                                    t.artist.name,
                                    user_id,
+                                   t.artist.artist_id,
                                    trackLink.match)
         back_sims.append(simple_tr)
 
