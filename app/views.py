@@ -147,8 +147,13 @@ def trackPage(track_id):
     track = models.Track.query.filter_by(track_id=track_id).first()
     image = track.image
     user_id = None
+    user_likes = None
+    score = 0
+    in_degree = 0
     if current_user.is_authenticated:
         user_id = current_user.id
+        user_likes = set(x.track_id for x in models.UserLike.query.filter_by(user_id = user_id, like = 1))
+
     simple_track = SimpleTrack(track.track_id,
                                track.name,
                                track.artist.name,
@@ -166,6 +171,9 @@ def trackPage(track_id):
     back_sims = []
     for trackLink in track.back_sims:
         t = models.Track.query.get(trackLink.from_id)
+        if trackLink.from_id in user_likes:
+        	score += trackLink.match
+        	in_degree += 1
         simple_tr = SimpleTrack(t.track_id,
                                    t.name,
                                    t.artist.name,
@@ -179,7 +187,9 @@ def trackPage(track_id):
                            track=simple_track,
                            image=image,
                            sims=sims,
-                           back_sims=back_sims)
+                           back_sims=back_sims,
+                           score=score,
+                           in_degree=in_degree)
 
 
 @app.route('/status')

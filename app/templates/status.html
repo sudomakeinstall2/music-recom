@@ -9,7 +9,7 @@
     {% for track in tracks[:4] %}
     <div class="card" id="c{{track[1][0].track_id}}">
         <div class="card-block">
-          <h4 class="card-title">{{track[1][0].name|safe}}</h4>
+          <h4 class="card-title"><a href="/track/{{track[1][0].track_id}}">{{track[1][0].name|safe}}</a></h4>
           <h5 class="card-subtitle text-muted">{{track[1][0].artist.name|safe}}</h5>
         </div>
       <!-- <img class="card-img-top" src="..." alt="Card image cap"> -->
