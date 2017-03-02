@@ -194,7 +194,6 @@ def status():
             liked_tracks.add(x.track_id)
         elif x.like == -1:
             disliked_tracks.add(x.track_id)
-    #set_tracks = set([x.track_id for x in user_likes if x.like == 1])
     links = models.TrackLink.query.all()
     for link in links:
         if link.to_id in dic:
@@ -207,11 +206,9 @@ def status():
     tracks = tracks[:4]
     for i,x in enumerate(tracks):
         t = x[1][0]
-        sims = [models.Track.query.get(link.from_id).name for link in sorted(t.back_sims,key=lambda x: x.match, reverse = True)]
+        similarTracksThatUserLikes = filter(lambda x: x.from_id in liked_tracks, t.back_sims)
+        sims = [models.Track.query.get(link.from_id).name for link in sorted(similarTracksThatUserLikes,key=lambda x: x.match, reverse = True)]
         tracks[i][1].append(sims)
-    print tracks[0]
-    #for track in tracks:
-    #    app.logger.warning(repr(track[1]))
     return render_template('status.html',tracks=tracks)
 
 @login_required

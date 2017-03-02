@@ -14,6 +14,9 @@ class UserLike(db.Model):
     track_id = db.Column(db.Integer, db.ForeignKey('tracks.track_id'))
     like = db.Column(db.Integer)
 
+    def __repr__(self):
+        return '<UserLike user_id:%r track_id:%r like:%r>' % (self.user_id, self.track_id, self.like)
+
 
 class User(db.Model):
     __tablename__ = 'user'
@@ -53,6 +56,9 @@ class TrackLink(db.Model):
     from_id = db.Column(db.Integer, db.ForeignKey('tracks.track_id'))
     to_id = db.Column(db.Integer, db.ForeignKey('tracks.track_id'))
     match = db.Column(db.Float)
+
+    def __repr__(self):
+        return '<TrackLink from_id:%r to_id:%r match:%r>' % (self.from_id, self.to_id, self.match)
 
 
 class Track(db.Model):
