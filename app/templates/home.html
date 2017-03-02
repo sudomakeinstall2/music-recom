@@ -1,0 +1,73 @@
+{% macro tag_color(match) -%}
+    {% if match >= 0.6%}
+        tag-success
+    {% elif match == None %}
+        tag-warning
+    {% else %}
+        tag-danger
+    {% endif %}
+{%- endmacro %}
+
+{% macro track_list(name, tracks) -%}
+    <ul class="list-group">
+        <li class="list-group-item active"> {{name}} </li>
+        {% for t in tracks %}
+            <a href="/track/{{t.trackID}}" class="list-group-item list-group-item-action">
+                <span class="tag {{tag_color(t.like)}} tag-pill pull-xs-right">{{t.like}}</span>
+                {{t.trackName|safe}} - {{t.artistName|safe}}
+            </a>
+        {% endfor %}
+    </ul>
+{%- endmacro %}
+
+{% macro artist_list(name, artists) -%}
+    <ul class="list-group">
+        <li class="list-group-item active"> {{name}} </li>
+        {% for a in artists %}
+            <a href="/artist/{{a[0]}}" class="list-group-item list-group-item-action">
+                <span class="tag {{tag_color(a[1][0])}} tag-pill pull-xs-right">{{a[1][0]}}</span>
+                {{a[1][1]|safe}}
+            </a>
+        {% endfor %}
+    </ul>
+{%- endmacro %}
+
+{% extends "index.html" %}
+{% block content %}
+<div class="row" >
+    <div class="col-md-3 " >
+        <div class="card">
+          <div class="card-block">
+            <h4 class="card-title">{{g.user.nickname}}</h4>
+            <h6 class="card-subtitle text-muted">subtitle</h6>
+          </div>
+          <div>
+            <!-- <img class="centered" src="{{image}}" alt="Card image"> -->
+          </div>
+          <div class="card-block">
+            <!-- <p class="card-text"></p> -->
+            <!-- <a href="#" class="card-link"></a> -->
+            <!-- <a href="#" class="card-link"></a> -->
+          </div>
+        </div>
+    </div>
+        <div class="col-md-4">
+        {{ track_list('tracks', tracks) }}
+        </div>
+    <div class="col-md-4">
+        {{ artist_list('artists', artists) }}
+        <!-- <nav aria-label="Page navigation example">
+          <ul class="pagination">
+            <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+            <li class="page-item"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item"><a class="page-link" href="#">Next</a></li>
+          </ul>
+        </nav> -->
+    </div>
+</div>
+<div class="row">
+
+</div>
+{% endblock %}

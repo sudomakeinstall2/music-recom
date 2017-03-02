@@ -209,6 +209,27 @@ def trackPage(track_id):
                            in_degree=in_degree)
 
 
+@app.route('/home')
+@login_required
+def home():
+	user_likes = models.UserLike.query.filter_by(user_id = g.user.id, like = 1)
+	tracks = []
+	artist_dict = {}
+	for x in user_likes:
+		t = models.Track.query.get(x.track_id)
+		simple_tr = SimpleTrack(t.track_id,
+                                   t.name,
+                                   t.artist.name,
+                                   g.user.id,
+                                   t.artist.artist_id)
+		if simple_tr.artist_id in artist_dict:
+			artist_dict[simple_tr.artist_id] = (artist_dict[simple_tr.artist_id][0]+1,artist_dict[simple_tr.artist_id][1])
+		else:
+			artist_dict[simple_tr.artist_id] = (1,simple_tr.artistName)
+		tracks.append(simple_tr)
+	artists = sorted(artist_dict.items(), key=lambda x:x[1][0], reverse=True)
+	return render_template('home.html', tracks=tracks, count=len(tracks), artists=artists )
+
 @app.route('/status')
 @login_required
 def status():
