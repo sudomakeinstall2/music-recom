@@ -14,7 +14,7 @@
         {% for t in tracks %}
             <a href="/track/{{t.trackID}}" class="list-group-item list-group-item-action">
                 <span class="tag {{tag_color(t.match)}} tag-pill pull-xs-right">{{t.match}}</span>
-                {{t.trackName}} - {{t.artistName}} - {{t.like}}
+                {{t.trackName|safe}}, {{t.artistName|safe}}, {{t.like}}
             </a>
         {% endfor %}
     </ul>
@@ -26,8 +26,8 @@
     <div class="col-md-3 " >
         <div class="card">
           <div class="card-block">
-            <h4 class="card-title">{{track.trackName}}</h4>
-            <h6 class="card-subtitle text-muted">{{track.artistName}}</h6>
+            <h4 class="card-title">{{track.trackName | safe}}</h4>
+            <h6 class="card-subtitle text-muted">{{track.artistName | safe}}</h6>
           </div>
           <div>
             <img class="centered" src="{{image}}" alt="Card image">
