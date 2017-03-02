@@ -1,0 +1,52 @@
+{% macro tag_color(match) -%}
+    {% if match >= 0.6%}
+        tag-success
+    {% elif match == None %}
+        tag-warning
+    {% else %}
+        tag-danger
+    {% endif %}
+{%- endmacro %}
+
+{% macro track_list(name, tracks) -%}
+    <ul class="list-group">
+        <li class="list-group-item active"> {{name}} </li>
+        {% for t in tracks %}
+            <a href="/track/{{t.trackID}}" class="list-group-item list-group-item-action">
+                <span class="tag {{tag_color(t.like)}} tag-pill pull-xs-right">{{t.like}}</span>
+                {{t.trackName|safe}}
+            </a>
+        {% endfor %}
+    </ul>
+{%- endmacro %}
+
+{% extends "index.html" %}
+{% block content %}
+<div class="row" >
+    <div class="col-md-3 " >
+        <div class="card">
+          <div class="card-block">
+            <h4 class="card-title">{{artist.name | safe}}</h4>
+            <h6 class="card-subtitle text-muted">subtitle</h6>
+          </div>
+          <div>
+            <!-- <img class="centered" src="{{image}}" alt="Card image"> -->
+          </div>
+          <div class="card-block">
+            <!-- <p class="card-text"></p> -->
+            <!-- <a href="#" class="card-link"></a> -->
+            <!-- <a href="#" class="card-link"></a> -->
+          </div>
+        </div>
+    </div>
+        <div class="col-md-4">
+        {{ track_list('tracks', tracks) }}
+    </div>
+    <!-- <div class="col-md-4"> -->
+        <!-- {{ track_list('back_sims', back_sims) }} -->
+    <!-- </div> -->
+</div>
+<div class="row">
+
+</div>
+{% endblock %}
