@@ -8,13 +8,23 @@
     {% endif %}
 {%- endmacro %}
 
+{% macro item_color(like) -%}
+    {% if like == 1%}
+        palegreen
+    {% elif like == -1 %}
+        bisque
+    {% else %}
+        white
+    {% endif %}
+{%- endmacro %}
+
 {% macro track_list(name, tracks) -%}
     <ul class="list-group">
         <li class="list-group-item active"> {{name}} </li>
         {% for t in tracks %}
-            <a href="/track/{{t.trackID}}" class="list-group-item list-group-item-action">
+            <a href="/track/{{t.trackID}}" class="list-group-item list-group-item-action" style="background-color: {{item_color(t.like)}}">
                 <span class="tag {{tag_color(t.match)}} tag-pill pull-xs-right">{{t.match}}</span>
-                {{t.trackName|safe}}, <span class="artist_span" id="artist_{{t.artist_id}}">{{t.artistName|safe}}</span>, {{t.like}}
+                {{t.trackName|safe}} - <span class="artist_span" id="artist_{{t.artist_id}}">{{t.artistName|safe}}</span>
             </a>
         {% endfor %}
     </ul>
