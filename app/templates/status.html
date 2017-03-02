@@ -39,7 +39,7 @@
 <script>
     $( ".btn" ).click(function( eventObject ) {
         var elem = $( this );
-        $.notify("Working...", "info",{autohide: false});
+        $.notify("Working...", {className:'info', autoHide: false});
         if ( elem.attr( "action" )=="like" ) {
             $.post( "/updateSong", { action: "like", artist: elem.attr("artist"), track: elem.attr("track") })
              .done(function(data){
