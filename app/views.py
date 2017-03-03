@@ -187,7 +187,7 @@ def trackPage(track_id):
     back_sims = []
     for trackLink in track.back_sims:
         t = models.Track.query.get(trackLink.from_id)
-        if trackLink.from_id in user_likes:
+        if user_likes and trackLink.from_id in user_likes:
         	score += trackLink.match
         	in_degree += 1
         simple_tr = SimpleTrack(t.track_id,
@@ -244,7 +244,7 @@ def status():
             disliked_tracks.add(x.track_id)
     links = models.TrackLink.query.all()
     for link in links:
-        if link.to_id in dic:
+        if link.from_id in liked_tracks and link.to_id in dic:
             dic[link.to_id][1] = dic[link.to_id][1] + link.match
         elif link.from_id in liked_tracks and link.to_id not in liked_tracks and link.to_id not in disliked_tracks:
             t = models.Track.query.get(link.to_id)

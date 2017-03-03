@@ -44,11 +44,13 @@
           <div>
             <img class="centered" src="{{image}}" alt="Card image">
           </div>
-          <div class="card-block">
-            <p class="card-text">{{track.like}}</p>
-            <a href="#" class="card-link">{{score}}</a>
-            <a href="#" class="card-link">{{in_degree}}</a>
+          <div class="card-block" style="padding-bottom:4.7rem">
+            <p class="card-text">Like: {{track.like}} <br> Score: {{score}} <br> In Degree: {{in_degree}}</p>
           </div>
+          <div class="card-footer">
+            <a href="#" class="btn btn-primary" action="like" track="{{track.trackName|safe}}" artist="{{track.artistName|safe}}">Like</a>
+            <a href="#" class="btn btn-primary" action="ignore" trackid="{{track.trackID}}">Ignore</a>
+            </div>
         </div>
     </div>
         <div class="col-md-4">
@@ -71,5 +73,24 @@
         var elem = $( this );
         $.notify(elem.attr("id"), {className:'info', autoHide: false});
     });
+        $( ".btn" ).click(function( eventObject ) {
+        var elem = $( this );
+        $.notify("Working...", {className:'info', autoHide: false});
+        if ( elem.attr( "action" )=="like" ) {
+            $.post( "/updateSong", { action: "like", artist: elem.attr("artist"), track: elem.attr("track") })
+             .done(function(data){
+                 window.location.reload();
+                  //$("#c"+elem.attr("trackid")).remove();
+                  }) 
+        } 
+        if ( elem.attr( "action" )=="ignore" ) {
+            $.post( "/updateSong", { action: "ignore", track_id: elem.attr("trackid") })
+             .done(function(data){
+                 window.location.reload();
+                  //$("#c"+elem.attr("trackid")).remove();
+                  }) 
+        } 
+    });
+
 </script>
 {% endblock %}
