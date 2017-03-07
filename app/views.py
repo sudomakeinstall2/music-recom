@@ -7,6 +7,10 @@ import urllib2, json
 
 from bs4 import BeautifulSoup
 
+# open authentication 2
+from apiclient import discovery
+from oauth2client import client
+
 
 from wtforms import Form, BooleanField,validators
 
@@ -99,33 +103,57 @@ def logout():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    #return render_template('index.html')
-    if g.user is not None and g.user.is_authenticated:
-        # already logged in
+    if g.user is not None and g.user.is_authenticated and 'credentials' not in session:
+        print 'we know the user'
         return redirect('/')
-    if request.form:
-        email = request.form['email']
-        if 'remember' not in request.form:
-            remember = False
+    elif 'credentials' in session:
+        c = json.loads(session['credentials'])
+        email = c['id_token']['email']
+        user = models.User.query.filter_by(email = email).first()
+        if user:
+            print 'user in database'
+            user.credentials = session['credentials']
+            db.session.commit()
         else:
-            remember = True
-        #app.logger.debug("email %s remember me %s", email, remember)
-        session['remember_me'] = remember
-        #session['remember_me'] = False
-        # successful login
-        user = models.User.query.filter_by(email=email).first()
-        if user is None:
-            #email = form.email.data
-            user = models.User(nickname=email.split('@')[0],email = email)
+            print 'create new user in database'
+            user = models.User()
+            user.email = email
+            user.credentials = session['credentials']
             db.session.add(user)
             db.session.commit()
         remember = False
-        if 'remember_me' in session:
-            remember = session['remember_me']
-            session.pop('remember_me',None)
-        login_user(user, remember = remember)
-        return redirect('/')
-    return render_template('login.html')
+        session.pop('credentials', None)
+        login_user(user, remember)
+        print 'logged in successfully'
+        return redirect('/status')
+    else:
+        print 'you should oauth'
+        return redirect(url_for('oauth2callback'))
+
+SCOPES = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+]
+
+@app.route('/oauth2callback')
+def oauth2callback():
+  flow = client.flow_from_clientsecrets(
+      'client_secrets.json',
+      scope=' '.join(SCOPES),
+      redirect_uri=url_for('oauth2callback', _external=True))
+  # flow.params['access_type'] = 'offline'
+  # flow.params['approval_prompt'] = 'force'
+  if 'code' not in request.args:
+    print 'code not in request'
+    auth_uri = flow.step1_get_authorize_url()
+    return redirect(auth_uri)
+  else:
+    print 'code in request'
+    auth_code = request.args.get('code')
+    credentials = flow.step2_exchange(auth_code)
+    session['credentials'] = credentials.to_json()
+    print >> open('log.txt','w') , credentials.to_json()
+    return redirect(url_for('login'))
 
 
 class SimpleTrack():

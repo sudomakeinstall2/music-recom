@@ -21,8 +21,8 @@ class UserLike(db.Model):
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key = True)
-    nickname = db.Column(db.String(64), index = True, unique = True)
     email = db.Column(db.String(64), index = True, unique = True)
+    credentials = db.Column(db.Text)
 
     tracks = db.relationship('UserLike',
                            backref = 'users',

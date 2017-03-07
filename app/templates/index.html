@@ -17,9 +17,13 @@
       <header style="padding:30px">
           <nav class="navbar navbar-dark navbar-fixed-top bg-primary">
               <div class="nav navbar-nav">
-              <a class="nav-item nav-link active" href="#"> Home </a>
               {% if g.user.is_authenticated %}
+              <a class="nav-item nav-link active" href="{{ url_for('home') }}"> Home </a>
+              <a class="nav-item nav-link active" href="{{ url_for('status') }}"> Status </a>
+              <a class="nav-item nav-link active" href="{{ url_for('index') }}"> Add Music </a>
               <a class="nav-item nav-link active" href="{{ url_for('logout') }}">Logout</a>
+              {% else %}
+              <a class="nav-item nav-link active" href="{{ url_for('login') }}">Login</a>
               {% endif %}
               
               </div>
